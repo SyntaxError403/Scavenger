@@ -17,9 +17,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.actvity_main);
         Intent results = new Intent(MainActivity.this,Results.class);
         TextView location = findViewById(R.id.use_my_location_button);
-        location.setOnClickListener((View v)->{
-                startActivity(results);
-                });
+        location.setOnClickListener((View v)-> startActivity(results));
 
     }
 }

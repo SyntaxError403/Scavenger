@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -24,13 +25,21 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AutocompletePrediction;
+import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
+import com.google.android.libraries.places.api.model.LocationRestriction;
 import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.model.RectangularBounds;
+import com.google.android.libraries.places.api.model.TypeFilter;
+import com.google.android.libraries.places.api.net.FetchPlaceRequest;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -50,7 +59,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final float DEFAULT_ZOOM = 15f;
 
     private Place mPLace;
-
+    private PlacesClient placesClient;
+    private String [] mStoreNames = {"Walmart Supercenter","Pay Less Super Market","Target","Kroger","Meijer","Albertsons",};
 
 
     @Override
@@ -65,44 +75,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         getLocationPermission();
 
         Places.initialize(this, "AIzaSyCUNENQ8f5kPUVh-xWUkRtx3yuiMDeqTAM");
-        PlacesClient placesClient = Places.createClient(this);
-
-/*
-        // Initialize the AutocompleteSupportFragment.
-        AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
-        getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
-
-        // Specify the types of place data to return.
-        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.RATING, Place.Field.LAT_LNG));
-
-        // Set up a PlaceSelectionListener to handle the response.
-        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
-            @Override
-            public void onPlaceSelected(Place place) {
-
-                Log.i(TAG, "Place: " + place.getName() + ", " + place.getId());
-                mPLace =  place;
-                mLocationMarker = mMap.addMarker(new MarkerOptions()
-                        .position(mPLace.getLatLng())
-                        .title(mPLace.getName() + " Has a rating of:"  + mPLace.getRating()));
-
-                setupMap(mPLace.getLatLng(), DEFAULT_ZOOM);
-            }
-
-            @Override
-            public void onError(Status status) {
-                // TODO: Handle the error.
-                Log.i(TAG, "An error occurred: " + status);
-            }
-        });
-*/
+         placesClient = Places.createClient(this);
 
     }
 
 
 
 
+    private void addMarkers(String  placeId, int i){
 
+        List<Place.Field> placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME,Place.Field.LAT_LNG);
+
+// Construct a request object, passing the place ID and fields array.
+        FetchPlaceRequest request = FetchPlaceRequest.newInstance(placeId, placeFields);
+
+        placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
+            Place place = response.getPlace();
+            Log.i(TAG, "Place found: " + place.getName());
+
+
+            String [] check = {"Walmart Supercenter","Pay Less Super Market","Target","Kroger","Meijer","Albertsons",};
+         //    if (check[i].equals(place.getName())){
+
+             mLocationMarker = mMap.addMarker(new MarkerOptions()
+                     .position(place.getLatLng()).title(place.getName()));
+     //    }
+        }).addOnFailureListener((exception) -> {
+            if (exception instanceof ApiException) {
+                ApiException apiException = (ApiException) exception;
+                int statusCode = apiException.getStatusCode();
+                // Handle error with given status code.
+                Log.e(TAG, "Place not found: " + exception.getMessage());
+            }
+        });
+
+
+    }
 
 
 
@@ -155,8 +163,44 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void getDeviceLocation(){
         Log.d(TAG, "getDeviceLocation: getting the devices current location");
         locationHelper.getDeviceLocation(MapsActivity.this, mLocationPermissionsGranted,
-                latLng -> setupMap(latLng,DEFAULT_ZOOM));
+                latLng ->{ mLatLng = latLng;
+                setupMap(latLng,DEFAULT_ZOOM);
 
+        AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
+                    for (String s : mStoreNames) {
+                        RectangularBounds bounds = RectangularBounds.newInstance(
+                                mLatLng,
+                                new LatLng(mLatLng.latitude + .15, mLatLng.longitude + .1));
+
+                        // Use the builder to create a FindAutocompletePredictionsRequest.
+                        FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
+                                // Call either setLocationBias() OR setLocationRestriction().
+                                .setLocationRestriction(bounds)
+                                .setOrigin(mLatLng)
+                                .setCountries("US")
+                                .setSessionToken(token)
+                                .setQuery(s)
+                                .build();
+
+                        placesClient.findAutocompletePredictions(request).addOnSuccessListener((response) -> {
+                            int i =0 ;
+                            for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
+                                i+=1;
+                                Log.i(TAG, prediction.getPlaceId());
+                                Log.i(TAG, prediction.getPrimaryText(null).toString());
+                                // mLocationMarker = mMap.addMarker(new MarkerOptions().position(prediction.getPlaceId())
+
+                                addMarkers(prediction.getPlaceId(),i);
+                            }
+                        }).addOnFailureListener((exception) -> {
+                            if (exception instanceof ApiException) {
+                                ApiException apiException = (ApiException) exception;
+                                Log.e(TAG, "Place not found: " + apiException.getStatusCode());
+                                snackbarHelper.showMessage(this, "Error");
+                            }
+                        });
+                    }
+        });
     }
 
     private void setupMap(LatLng latLng, float zoom){
