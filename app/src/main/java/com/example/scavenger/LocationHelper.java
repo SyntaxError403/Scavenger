@@ -17,6 +17,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
+import java.io.IOException;
+
 public class LocationHelper {
 
 
@@ -35,7 +37,7 @@ public class LocationHelper {
         private FusedLocationProviderClient mFusedLocationProviderClient;
 
         public interface LocationListener{
-            void OnLocation(LatLng latLng);
+            void OnLocation(LatLng latLng) throws IOException;
         }
 
 
@@ -85,7 +87,11 @@ public class LocationHelper {
                                 //TODO: WIFI LOCATION
 
                                 mLatLng = new LatLng(mLocation.getLatitude(), mLocation.getLongitude());
-                                listener.OnLocation(mLatLng);
+                                try {
+                                    listener.OnLocation(mLatLng);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                             }else{
                                 Log.d(TAG, "onComplete: current location is null");
                                 Toast.makeText(context, "unable to get current location", Toast.LENGTH_SHORT).show();

@@ -6,7 +6,7 @@
     <ImageView
         android:layout_width="200dp"
         android:layout_marginTop="100dp"
-        android:layout_marginLeft="100dp"
+        android:layout_gravity="center_horizontal"
         android:layout_height="200dp"
         android:src="@drawable/logo"
         ></ImageView>
@@ -15,7 +15,7 @@
         android:id="@+id/use_my_location_button"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="125dp"
+        android:layout_gravity="center_horizontal"
         android:layout_marginTop="100dp"
         android:background="@drawable/button"
         android:text="Use my location"/>
@@ -24,7 +24,7 @@
         android:id="@+id/select_location_button"
         android:layout_width="175dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="112dp"
+        android:layout_gravity="center_horizontal"
         android:layout_marginTop="55dp"
         android:background="@drawable/button"
         android:text="Choose a location"
