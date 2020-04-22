@@ -167,7 +167,6 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
         String grubhub = "https://play.google.com/store/apps/details?id=com.grubhub.android";
         String wa = "https://play.google.com/store/apps/details?id=com.walmart.grocery";
 
-        CardView guide = findViewById(R.id.guide);
 
 
         CardView garden = findViewById(R.id.garden);
@@ -217,8 +216,8 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
         desert_text5 = "The Carcross Desert is considered to be the smallest desert with it's measurement of 1 Square Mile. " +
                 "This symbolizes that your city has many good food options and is not considered a 'Food Desert' ";
 
-        desert.setText(desert_name1);
-        desert_details.setText(desert_text1);
+       // desert.setText(desert_name1);
+       // desert_details.setText(desert_text1);
 
         AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
                 getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
@@ -455,7 +454,15 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
 
                             }
 
-                            if(results.size() >5){myRatingBar.setRating(5);}
+                            if(results.size()<3){myRatingBar.setRating(1);
+                            desert.setText(desert_name1);
+                            desert_details.setText(desert_text1);
+                            }
+                            if(results.size() >5){myRatingBar.setRating(5);
+                            desert.setText(desert_name5);
+                            desert_details.setText(desert_text5);
+                            }
+                            if(results.values().contains("Walmart Supercenter")){myRatingBar.setRating(5);}
 
                             if (s.equals(mStoreNames[mStoreNames.length-1])){
                                 Log.d("Test Filter", results.toString());
