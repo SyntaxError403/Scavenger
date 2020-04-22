@@ -3,12 +3,16 @@ package com.example.scavenger;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -24,6 +28,9 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
@@ -37,10 +44,21 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.maps.android.SphericalUtil;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -61,23 +79,57 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private Place mPLace;
     private PlacesClient placesClient;
-    private String [] mStoreNames = {"Walmart Supercenter","Walmart","Pay Less Super Market","Target","Kroger","Meijer","Albertsons","Market"};
+    private String [] mStoreNames = {"Walmart Supercenter","Walmart","Pay Less Super Market","Target","Kroger","Meijer","Albertsons","Market","Food"};
    // private HashMap<Integer,String> results = new HashMap<>();
     private Integer key =0;
     private String s;
+    public String cityscore;
+    private FirebaseDatabase database;
+    private DatabaseReference myRef;
+    private Double lat;
+    private Double lng;
+    private boolean alreadyHaveLocation;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-       // BottomNavigationView navigation = findViewById(R.id.navigation);
-       // navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-
+         database = FirebaseDatabase.getInstance();
+         myRef = database.getReference("Location");
 
         getLocationPermission();
-
+        getLocation();
         Places.initialize(this, "AIzaSyCUNENQ8f5kPUVh-xWUkRtx3yuiMDeqTAM");
         placesClient = Places.createClient(this);
+    }
+
+
+    private void getLocation(){
+
+        // Read from the database
+        myRef.addValueEventListener(new ValueEventListener() {
+
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                // This method is called once with the initial value and again
+                // whenever data at this location is updated.
+                lat = dataSnapshot.child("Lat").getValue(Double.class);
+                lng = dataSnapshot.child("Long").getValue(Double.class);
+                mLatLng = new LatLng(lat,lng);
+                getDeviceLocation(mLatLng);
+                alreadyHaveLocation = true;
+                setupMap(mLatLng, DEFAULT_ZOOM);
+                snackbarHelper.showMessage(MapsActivity.this,mLatLng.toString());
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                // Failed to read value
+                Log.w(TAG, "Failed to read value.", error.toException());
+            }
+        });
+
 
     }
 
@@ -91,12 +143,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
             Place place = response.getPlace();
             Log.i(TAG, "Place found: " + place.getName());
-
-
-            String [] check = {"Walmart Supercenter","Walmart","Pay Less Super Market","Target","Kroger","Meijer","Albertsons"};
-
-
-             mLocationMarker = mMap.addMarker(new MarkerOptions()
+            mLocationMarker = mMap.addMarker(new MarkerOptions()
                      .position(place.getLatLng()).title(place.getName()));
 
         }).addOnFailureListener((exception) -> {
@@ -137,84 +184,91 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
-
     @Override
     public void onMapReady(GoogleMap googleMap) {
         Toast.makeText(this, "Map is Ready", Toast.LENGTH_SHORT).show();
         Log.d(TAG, "onMapReady: map is ready");
         mMap = googleMap;
-        if (mLocationPermissionsGranted) {
-            getDeviceLocation();
+        if (alreadyHaveLocation = false) {
+            locationHelper.getDeviceLocation(MapsActivity.this, mLocationPermissionsGranted,
+                    latLng -> {
+                        setupMap(latLng, DEFAULT_ZOOM);
+                        if (mLocationPermissionsGranted) {
+                            getDeviceLocation(latLng);
 
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
-                            Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-            mMap.setMyLocationEnabled(true);
-            mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                                    != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                                return;
+                            }
 
-            }
+
+                        }
+                    });
+        }
+        mMap.setMyLocationEnabled(true);
+        mMap.getUiSettings().setMyLocationButtonEnabled(false);
     }
 
-   public void getDeviceLocation(){
-       Results mResults = new Results();
+    public void getDeviceLocation(LatLng latLng){
+        Log.d(TAG, "getDeviceLocation: getting the devices current location");
+        double distance = 104.52;
+        setupMap(latLng,DEFAULT_ZOOM);
+        HashMap<Integer,String> results = new HashMap<>();
+        AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
+        LatLng NE = new LatLng(latLng.latitude+.1,latLng.longitude+.2);
+        LatLng SW = new LatLng(latLng.latitude,latLng.longitude - .1);
 
-       mResults.getDeviceLocation(this,mLocationPermissionsGranted,latLng-> {
-                   setupMap(latLng, DEFAULT_ZOOM);
-                   Log.d(TAG, "getDeviceLocation: getting the devices current location");
-                   HashMap<Integer, String> results = new HashMap<>();
-                   AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
-                   for (String s : mStoreNames) {
-                       RectangularBounds bounds = RectangularBounds.newInstance(
-                               latLng,
-                               new LatLng(latLng.latitude + .15, latLng.longitude + .1));
-
-                       // Use the builder to create a FindAutocompletePredictionsRequest.
-                       FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
-                               // Call either setLocationBias() OR setLocationRestriction().
-                               .setLocationRestriction(bounds)
-                               .setOrigin(latLng)
-                               .setCountries("US")
-                               .setSessionToken(token)
-                               .setQuery(s)
-                               .build();
-
-                       placesClient.findAutocompletePredictions(request).addOnSuccessListener((response) -> {
-                                   int i = 0;
-                                   for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
-                                       key += 1;
-                                       Log.i(TAG, prediction.getPlaceId());
-                                       Log.i(TAG, prediction.getPrimaryText(null).toString());
-                                       // mLocationMarker = mMap.addMarker(new MarkerOptions().position(prediction.getPlaceId())
+        LatLng targetNorteast = SphericalUtil.computeOffset(NE, distance * Math.sqrt(2), 45);
+        LatLng targetSouthwest = SphericalUtil.computeOffset(SW, distance * Math.sqrt(2), 225);
+        RectangularBounds bounds = RectangularBounds.newInstance(targetSouthwest,targetNorteast);
 
 
-                                       if (prediction.getPlaceTypes().contains(Place.Type.GROCERY_OR_SUPERMARKET)) {
-                                           results.put(key, prediction.getPrimaryText(null).toString());
-                                           addMarkers(prediction.getPlaceId(), i);
-                                       }
-                                       //  if(key ==1){Log.d("Test Filter", results.toString());}
+                    for (String s : mStoreNames) {
 
-                                       if (s.equals(mStoreNames[mStoreNames.length - 1])) {
-                                           Log.d("Test Filter", results.toString());
-                                           Compute mCompute = new Compute();
-                                           mCompute.getScore(results);
-                                           break;
-                                       }
 
-                                   }
-                               }
-                       ).addOnFailureListener((exception) -> {
-                           if (exception instanceof ApiException) {
-                               ApiException apiException = (ApiException) exception;
-                               Log.e(TAG, "Place not found: " + apiException.getStatusCode());
-                               snackbarHelper.showMessage(this, "Error");
-                           }
-                       });
+                        // Use the builder to create a FindAutocompletePredictionsRequest.
+                        FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
+                                // Call either setLocationBias() OR setLocationRestriction().
+                                .setLocationRestriction(bounds)
+                                .setOrigin(latLng)
+                                .setCountries("US")
+                                .setSessionToken(token)
+                                .setQuery(s)
+                                .build();
 
-                   }
-               });
+                        placesClient.findAutocompletePredictions(request).addOnSuccessListener((response) -> {
+                            int i =0 ;
+                            for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
+                                key+=1;
+                                Log.i(TAG, prediction.getPlaceId());
+                                Log.i(TAG, prediction.getPrimaryText(null).toString());
+                                // mLocationMarker = mMap.addMarker(new MarkerOptions().position(prediction.getPlaceId())
+
+
+                                if(prediction.getPlaceTypes().contains(Place.Type.GROCERY_OR_SUPERMARKET)) {
+                                    results.put(key,prediction.getPrimaryText(null).toString());
+                                    addMarkers(prediction.getPlaceId(), i);
+                                }
+
+                                if (s.equals(mStoreNames[mStoreNames.length-1])){
+                                    Log.d("Test Filter", results.toString());
+                                   Compute compute = new Compute();
+                                   compute.getScore(results);
+                                    break;
+                                }
+
+                            }
+                        }
+                        ).addOnFailureListener((exception) -> {
+                            if (exception instanceof ApiException) {
+                                ApiException apiException = (ApiException) exception;
+                                Log.e(TAG, "Place not found: " + apiException.getStatusCode());
+                                snackbarHelper.showMessage(this, "Error");
+                            }
+                        });
+
+                    }
     }
 
     private void setupMap(LatLng latLng, float zoom){
@@ -227,5 +281,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(MapsActivity.this);
     }
 
+
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void drawBounds(RectangularBounds bounds){
+
+        PolygonOptions polygonOptions =  new PolygonOptions()
+                .add(new LatLng(bounds.getNortheast().latitude, bounds.getNortheast().longitude))
+                .add(new LatLng(bounds.getSouthwest().latitude, bounds.getNortheast().longitude))
+                .add(new LatLng(bounds.getSouthwest().latitude, bounds.getSouthwest().longitude))
+                .add(new LatLng(bounds.getNortheast().latitude, bounds.getSouthwest().longitude))
+                .strokeColor(this.getColor(R.color.quantum_black_100));
+        mMap.addPolygon(polygonOptions);
+
+    }
 
 }
