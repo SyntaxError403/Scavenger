@@ -39,6 +39,7 @@ import com.google.android.libraries.places.widget.listener.PlaceSelectionListene
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -60,9 +61,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private Place mPLace;
     private PlacesClient placesClient;
-    private String [] mStoreNames = {"Walmart Supercenter","Pay Less Super Market","Target","Kroger","Meijer","Albertsons",};
-
-
+    private String [] mStoreNames = {"Walmart Supercenter","Walmart","Pay Less Super Market","Target","Kroger","Meijer","Albertsons","Market"};
+   // private HashMap<Integer,String> results = new HashMap<>();
+    private Integer key =0;
+    private String s;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,12 +77,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         getLocationPermission();
 
         Places.initialize(this, "AIzaSyCUNENQ8f5kPUVh-xWUkRtx3yuiMDeqTAM");
-         placesClient = Places.createClient(this);
+        placesClient = Places.createClient(this);
 
     }
-
-
-
 
     private void addMarkers(String  placeId, int i){
 
@@ -94,12 +93,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             Log.i(TAG, "Place found: " + place.getName());
 
 
-            String [] check = {"Walmart Supercenter","Pay Less Super Market","Target","Kroger","Meijer","Albertsons",};
-         //    if (check[i].equals(place.getName())){
+            String [] check = {"Walmart Supercenter","Walmart","Pay Less Super Market","Target","Kroger","Meijer","Albertsons"};
+
 
              mLocationMarker = mMap.addMarker(new MarkerOptions()
                      .position(place.getLatLng()).title(place.getName()));
-     //    }
+
         }).addOnFailureListener((exception) -> {
             if (exception instanceof ApiException) {
                 ApiException apiException = (ApiException) exception;
@@ -145,7 +144,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Toast.makeText(this, "Map is Ready", Toast.LENGTH_SHORT).show();
         Log.d(TAG, "onMapReady: map is ready");
         mMap = googleMap;
-
         if (mLocationPermissionsGranted) {
             getDeviceLocation();
 
@@ -157,50 +155,66 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.setMyLocationEnabled(true);
             mMap.getUiSettings().setMyLocationButtonEnabled(false);
 
-        }
+            }
     }
 
-    private void getDeviceLocation(){
-        Log.d(TAG, "getDeviceLocation: getting the devices current location");
-        locationHelper.getDeviceLocation(MapsActivity.this, mLocationPermissionsGranted,
-                latLng ->{ mLatLng = latLng;
-                setupMap(latLng,DEFAULT_ZOOM);
+   public void getDeviceLocation(){
+       Results mResults = new Results();
 
-        AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
-                    for (String s : mStoreNames) {
-                        RectangularBounds bounds = RectangularBounds.newInstance(
-                                mLatLng,
-                                new LatLng(mLatLng.latitude + .15, mLatLng.longitude + .1));
+       mResults.getDeviceLocation(this,mLocationPermissionsGranted,latLng-> {
+                   setupMap(latLng, DEFAULT_ZOOM);
+                   Log.d(TAG, "getDeviceLocation: getting the devices current location");
+                   HashMap<Integer, String> results = new HashMap<>();
+                   AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
+                   for (String s : mStoreNames) {
+                       RectangularBounds bounds = RectangularBounds.newInstance(
+                               latLng,
+                               new LatLng(latLng.latitude + .15, latLng.longitude + .1));
 
-                        // Use the builder to create a FindAutocompletePredictionsRequest.
-                        FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
-                                // Call either setLocationBias() OR setLocationRestriction().
-                                .setLocationRestriction(bounds)
-                                .setOrigin(mLatLng)
-                                .setCountries("US")
-                                .setSessionToken(token)
-                                .setQuery(s)
-                                .build();
+                       // Use the builder to create a FindAutocompletePredictionsRequest.
+                       FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
+                               // Call either setLocationBias() OR setLocationRestriction().
+                               .setLocationRestriction(bounds)
+                               .setOrigin(latLng)
+                               .setCountries("US")
+                               .setSessionToken(token)
+                               .setQuery(s)
+                               .build();
 
-                        placesClient.findAutocompletePredictions(request).addOnSuccessListener((response) -> {
-                            int i =0 ;
-                            for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
-                                i+=1;
-                                Log.i(TAG, prediction.getPlaceId());
-                                Log.i(TAG, prediction.getPrimaryText(null).toString());
-                                // mLocationMarker = mMap.addMarker(new MarkerOptions().position(prediction.getPlaceId())
+                       placesClient.findAutocompletePredictions(request).addOnSuccessListener((response) -> {
+                                   int i = 0;
+                                   for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
+                                       key += 1;
+                                       Log.i(TAG, prediction.getPlaceId());
+                                       Log.i(TAG, prediction.getPrimaryText(null).toString());
+                                       // mLocationMarker = mMap.addMarker(new MarkerOptions().position(prediction.getPlaceId())
 
-                                addMarkers(prediction.getPlaceId(),i);
-                            }
-                        }).addOnFailureListener((exception) -> {
-                            if (exception instanceof ApiException) {
-                                ApiException apiException = (ApiException) exception;
-                                Log.e(TAG, "Place not found: " + apiException.getStatusCode());
-                                snackbarHelper.showMessage(this, "Error");
-                            }
-                        });
-                    }
-        });
+
+                                       if (prediction.getPlaceTypes().contains(Place.Type.GROCERY_OR_SUPERMARKET)) {
+                                           results.put(key, prediction.getPrimaryText(null).toString());
+                                           addMarkers(prediction.getPlaceId(), i);
+                                       }
+                                       //  if(key ==1){Log.d("Test Filter", results.toString());}
+
+                                       if (s.equals(mStoreNames[mStoreNames.length - 1])) {
+                                           Log.d("Test Filter", results.toString());
+                                           Compute mCompute = new Compute();
+                                           mCompute.getScore(results);
+                                           break;
+                                       }
+
+                                   }
+                               }
+                       ).addOnFailureListener((exception) -> {
+                           if (exception instanceof ApiException) {
+                               ApiException apiException = (ApiException) exception;
+                               Log.e(TAG, "Place not found: " + apiException.getStatusCode());
+                               snackbarHelper.showMessage(this, "Error");
+                           }
+                       });
+
+                   }
+               });
     }
 
     private void setupMap(LatLng latLng, float zoom){

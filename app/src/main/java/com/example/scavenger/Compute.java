@@ -10,49 +10,49 @@ import com.google.android.libraries.places.api.model.RectangularBounds;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
 import static androidx.constraintlayout.widget.Constraints.TAG;
 
 public class Compute {
 
-    private PlacesClient placesClient;
 
-    private String TAG = "MapActivity";
 
-    public void compute(LatLng mLatLng){
 
-    String [] mStoreNames = {"Walmart","Pay Less","Target","Kroger","Meijer","Albertsons",};
-    for (String s : mStoreNames) {
+    public void getScore(HashMap<Integer,String> filteredResults){
 
-    AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
-    RectangularBounds bounds = RectangularBounds.newInstance(
-            mLatLng,
-            new LatLng(mLatLng.latitude + .15, mLatLng.longitude + .1));
+        final String TAG= "Compute";
+        int total = filteredResults.size();
+        int score =0 ;
+        String [] mStoreNames = {"Walmart Supercenter","Walmart","Pay Less Super Market","Target","Kroger","Meijer","Albertsons","Market"};
+        HashMap<String, Integer>  matches = new HashMap<>();
+        Collection<String> places = filteredResults.values();
+        Set<String> dupeSet = new HashSet<>();
 
-    // Use the builder to create a FindAutocompletePredictionsRequest.
-    FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
-            // Call either setLocationBias() OR setLocationRestriction().
-            .setLocationRestriction(bounds)
-            .setOrigin(mLatLng)
-            .setCountries("US")
-            .setSessionToken(token)
-            .setQuery(s)
-            .build();
+        for (String t : places) {
+            if (Collections.frequency(places, t) >= 2) {
 
-    placesClient.findAutocompletePredictions(request).addOnSuccessListener((response) -> {
-        for (AutocompletePrediction prediction : response.getAutocompletePredictions()) {
-            Log.i(TAG, prediction.getPlaceId());
-            Log.i(TAG, prediction.getPrimaryText(null).toString());
-            // mLocationMarker = mMap.addMarker(new MarkerOptions().position(prediction.getPlaceId())
-            //  addMarkers(prediction.getPlaceId());
+                matches.put(t,Collections.frequency(places, t));
+            }
         }
-    }).addOnFailureListener((exception) -> {
-        if (exception instanceof ApiException) {
-            ApiException apiException = (ApiException) exception;
-            Log.e(TAG, "Place not found: " + apiException.getStatusCode());
-            //    snackbarHelper.showMessage(this,"Error");
-        }
-    });
 
+        Log.d(TAG, matches.toString());
+
+        int i =0;
+
+        for (String s: mStoreNames){}
+        i+=1;
+
+        if(filteredResults.containsValue(mStoreNames[i]) ){
+            score +=1;
+           // Log.d(TAG,String.valueOf(matches.toString()) );
         }
+       // Log.d(TAG, String.valueOf(score));
+    //    Log.d(TAG, filteredResults.toString());
     }
+
 }
