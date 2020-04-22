@@ -94,21 +94,39 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
     // private HashMap<Integer,String> results = new HashMap<>();
     private Integer key =0;
     private float score = 0;
+
+    private TextView desert_details;
+
+    private String desert_name1;
+    private String desert_name2;
+    private String desert_name3;
+    private String desert_name4;
+    private String desert_name5;
+
+    private String desert_text1;
+    private String desert_text2;
+    private String desert_text3;
+    private String desert_text4;
+    private String desert_text5;
+
+
+
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState)  {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_result);
 
-       database = FirebaseDatabase.getInstance();
+        database = FirebaseDatabase.getInstance();
         DatabaseReference myRef = database.getReference("Location");
-
-
 
         initMap();
         Places.initialize(this, "AIzaSyCUNENQ8f5kPUVh-xWUkRtx3yuiMDeqTAM");
         placesClient = Places.createClient(this);
 
         desert = findViewById(R.id.desert);
+        desert_details = findViewById(R.id.desert_details);
 
         TextView city = findViewById(R.id.city);
         MapsActivity maps = new MapsActivity();
@@ -145,15 +163,62 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
         uber = findViewById(R.id.uberImage);
         grub = findViewById(R.id.grub);
 
+        String ub = "https://play.google.com/store/apps/details?id=com.ubercab.eats";
+        String grubhub = "https://play.google.com/store/apps/details?id=com.grubhub.android";
+        String wa = "https://play.google.com/store/apps/details?id=com.walmart.grocery";
+
         CardView guide = findViewById(R.id.guide);
+
+
         CardView garden = findViewById(R.id.garden);
+        String gaSite = "https://www.miraclegro.com/en-us/library/how-start-vegetable-garden-101";
+        garden.setOnClickListener(v-> CvClick(gaSite));
 
         CardView foodbank = findViewById(R.id.foodbank);
         String faSite = "https://www.feedingamerica.org/";
         foodbank.setOnClickListener(v-> CvClick(faSite));
 
-        uber.setOnClickListener(v -> ImageClick(0));
-        grub.setOnClickListener(v-> ImageClick(1));
+
+        CardView contact = findViewById(R.id.contact);
+        String caLink = "http://www.senate.gov/states/statesmap.htm";
+        contact.setOnClickListener(v-> CvClick(caLink));
+
+
+        uber.setOnClickListener(v -> ImageClick(ub));
+        grub.setOnClickListener(v-> ImageClick(grubhub));
+
+        ImageView walmart = findViewById(R.id.wa);
+        walmart.setOnClickListener(v-> ImageClick(wa));
+
+
+        desert_name1= "Mojave Desert";
+        desert_text1= "The Mojave Desert is the driest desert in the world. " +
+            "This symbolizes that your city is considered a really bad food desert," +
+            " which means you may not have the best access to affordable and or healthy food. " +
+            " View some resources below.";
+
+        desert_name2 = "Sahara Desert";
+        desert_text2 = "The Sahara Desert is the largest desert in the world." +
+                " This symbolizes that your city is considered a really bad ‘food desert’," +
+                " which means you may not have the best access to affordable and or healthy food. " +
+                " View some resources below. ";
+
+        desert_name3 ="Gobi Desert";
+        desert_text3 ="The Gobi Desert is a fairly large dry desert. " +
+                " This symbolizes that your city is considered a mediocre ‘food desert’, " +
+                "which means you may not have the best access to affordable and or healthy food.";
+
+        desert_name4 ="Columbia Basin";
+        desert_name4="The Columbia  Basin is a small desert in the US. " +
+                "This symbolizes that your city is not really considered a ‘food desert’" +
+                ", which means you have good access to affordable and or healthy food. ";
+
+        desert_name5 = "Carcross Desert";
+        desert_text5 = "The Carcross Desert is considered to be the smallest desert with it's measurement of 1 Square Mile. " +
+                "This symbolizes that your city has many good food options and is not considered a 'Food Desert' ";
+
+        desert.setText(desert_name1);
+        desert_details.setText(desert_text1);
 
         AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
                 getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
@@ -197,13 +262,10 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
 
     }
 
-    private void ImageClick(int i) {
-        String uber = "https://play.google.com/store/apps/details?id=com.ubercab.eats";
-        String grubhub = "https://play.google.com/store/apps/details?id=com.grubhub.android";
-        String url ="";
+    private void ImageClick(String url) {
+
         Intent intent = new Intent(Intent.ACTION_VIEW);
         Uri.Builder uriBuilder;
-        if (i == 0){ url = uber; } else{url = grubhub;}
         Intent mIntent = new Intent(Intent.ACTION_VIEW);
         mIntent.setData(Uri.parse(url));
         mIntent.setPackage("com.android.vending");
@@ -212,8 +274,9 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
     }
 
     private void CvClick(String url){
-
-
+        Uri uriUrl = Uri.parse(url);
+        Intent launchBrowser = new Intent(Intent.ACTION_VIEW, uriUrl);
+        startActivity(launchBrowser);
     }
 
     public LatLng getFinal_mLatLng() {

@@ -72,12 +72,14 @@
         />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:id="@+id/desert_details"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="55dp"
+        android:paddingTop="20dp"
         android:layout_marginLeft="5dp"
-        android:textSize="20dp"
-        android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean semper semper eros vel ultricies. Fusce. "
+        android:layout_marginTop="55dp"
+        android:text=""
+        android:textSize="15dp"
         />
 </androidx.cardview.widget.CardView>
 
@@ -165,6 +167,7 @@
             card_view:cardUseCompatPadding="true">
 
             <ImageView
+                android:id="@+id/wa"
                 android:layout_width="125dp"
                 android:layout_height="55dp"
                 android:scaleType="centerCrop"

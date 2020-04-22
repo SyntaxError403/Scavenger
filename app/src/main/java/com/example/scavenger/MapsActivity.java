@@ -8,6 +8,7 @@ import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -97,7 +98,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
          database = FirebaseDatabase.getInstance();
          myRef = database.getReference("Location");
-
+        Button back = findViewById(R.id.map_back_button);
+        back.setOnClickListener(v->{ Intent main = new Intent(this,Results.class);
+        startActivity(main);});
         getLocationPermission();
         getLocation();
         Places.initialize(this, "AIzaSyCUNENQ8f5kPUVh-xWUkRtx3yuiMDeqTAM");
