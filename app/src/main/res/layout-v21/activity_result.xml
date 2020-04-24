@@ -31,7 +31,7 @@
         android:layout_marginTop="120dp"
         android:layout_marginLeft="30dp"
         android:layout_height="wrap_content"
-        android:text="Lafayette"
+        android:text="City Name"
         android:textSize="45dp"
         android:textColor="@color/quantum_white_100"/>
 

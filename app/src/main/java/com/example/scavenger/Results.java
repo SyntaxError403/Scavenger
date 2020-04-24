@@ -2,7 +2,6 @@ package com.example.scavenger;
 
 import android.Manifest;
 import android.animation.ObjectAnimator;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -13,7 +12,6 @@ import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RatingBar;
@@ -26,7 +24,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 
-import com.bumptech.glide.load.resource.bitmap.FitCenter;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -34,7 +31,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
@@ -47,26 +43,15 @@ import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRe
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
 import com.google.maps.android.SphericalUtil;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
-
-import static androidx.constraintlayout.widget.Constraints.TAG;
 
 public class Results extends AppCompatActivity implements OnMapReadyCallback {
     private GoogleMap mMap;
@@ -97,17 +82,11 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
 
     private TextView desert_details;
 
-    private String desert_name1;
-    private String desert_name2;
-    private String desert_name3;
-    private String desert_name4;
-    private String desert_name5;
+    private String desert_name[];
 
-    private String desert_text1;
-    private String desert_text2;
-    private String desert_text3;
-    private String desert_text4;
-    private String desert_text5;
+
+    private String desert_text [];
+
 
 
 
@@ -190,30 +169,30 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
         walmart.setOnClickListener(v-> ImageClick(wa));
 
 
-        desert_name1= "Mojave Desert";
-        desert_text1= "The Mojave Desert is the driest desert in the world. " +
+        desert_name[1] ="Mojave Desert";
+        desert_text[1]= "The Mojave Desert is the driest desert in the world. " +
             "This symbolizes that your city is considered a really bad food desert," +
             " which means you may not have the best access to affordable and or healthy food. " +
             " View some resources below.";
 
-        desert_name2 = "Sahara Desert";
-        desert_text2 = "The Sahara Desert is the largest desert in the world." +
+        desert_name[2] = "Sahara Desert";
+        desert_text[2] = "The Sahara Desert is the largest desert in the world." +
                 " This symbolizes that your city is considered a really bad ‘food desert’," +
                 " which means you may not have the best access to affordable and or healthy food. " +
                 " View some resources below. ";
 
-        desert_name3 ="Gobi Desert";
-        desert_text3 ="The Gobi Desert is a fairly large dry desert. " +
+        desert_name[3] ="Gobi Desert";
+        desert_text[3] ="The Gobi Desert is a fairly large dry desert. " +
                 " This symbolizes that your city is considered a mediocre ‘food desert’, " +
                 "which means you may not have the best access to affordable and or healthy food.";
 
-        desert_name4 ="Columbia Basin";
-        desert_name4="The Columbia  Basin is a small desert in the US. " +
+        desert_name[4] ="Columbia Basin";
+        desert_name[4]="The Columbia  Basin is a small desert in the US. " +
                 "This symbolizes that your city is not really considered a ‘food desert’" +
                 ", which means you have good access to affordable and or healthy food. ";
 
-        desert_name5 = "Carcross Desert";
-        desert_text5 = "The Carcross Desert is considered to be the smallest desert with it's measurement of 1 Square Mile. " +
+        desert_name[5] = "Carcross Desert";
+        desert_text[5] = "The Carcross Desert is considered to be the smallest desert with it's measurement of 1 Square Mile. " +
                 "This symbolizes that your city has many good food options and is not considered a 'Food Desert' ";
 
        // desert.setText(desert_name1);
@@ -454,15 +433,17 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
 
                             }
 
-                            if(results.size()<3){myRatingBar.setRating(1);
-                            desert.setText(desert_name1);
-                            desert_details.setText(desert_text1);
+                            if(results.size()==0){myRatingBar.setRating(1);
+                            setResults(1);
                             }
                             if(results.size() >5){myRatingBar.setRating(5);
-                            desert.setText(desert_name5);
-                            desert_details.setText(desert_text5);
+                            setResults(5);
                             }
                             if(results.values().contains("Walmart Supercenter")){myRatingBar.setRating(5);}
+
+                            if(results.size()==2){setResults(2);}
+                            if(results.size()==3){setResults(3);}
+                            if(results.size()==4){setResults(4);}
 
                             if (s.equals(mStoreNames[mStoreNames.length-1])){
                                 Log.d("Test Filter", results.toString());
@@ -482,6 +463,12 @@ public class Results extends AppCompatActivity implements OnMapReadyCallback {
         }
 
         return results;
+    }
+
+    private void setResults(int i){
+        desert_details.setText(desert_text[i]);
+        desert.setText(desert_name[i]);
+
     }
 
 }
